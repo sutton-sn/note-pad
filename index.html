@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notepad</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="icon.png" type="image/png">
+    <style>
+        .note-item:hover {
+            background-color: #2D3748; /* Tailwind color gray-800 */
+        }
+        .note-item.editable {
+            background-color: #4A5568; /* Tailwind color gray-700 */
+        }
+        .note-item input {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 100%;
+        }
+        .note-item input:focus {
+            outline: none;
+        }
+        .menu-button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .menu-button:hover {
+            color: #A0AEC0; /* Tailwind color gray-400 */
+        }
+        .selected-note {
+            background-color: #4A5568; /* Tailwind color gray-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="flex flex-col md:flex-row h-screen">
+        <!-- Notes Menu -->
+        <div class="w-full md:w-1/4 bg-gray-800 p-4 overflow-y-auto">
+            <h1 class="text-2xl mb-4 flex items-center font-bold">
+                <a href="https://github.com" target="_blank" class="flex items-center">
+                    Notes
+                </a>
+            </h1>
+            <ul id="notesList" class="space-y-2">
+                <!-- Notes will be added here -->
+            </ul>
+            <button id="addNoteBtn" class="mt-4 w-full bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded">
+                Add Note
+            </button>
+        </div>
+        
+        <!-- Editing Area -->
+        <div class="w-full md:w-3/4 p-4 flex-1">
+            <textarea id="noteContent" class="w-full h-full bg-gray-700 text-white p-2 rounded focus:outline-none" placeholder="Write your note here..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const notesList = document.getElementById('notesList');
+            const noteContent = document.getElementById('noteContent');
+            const addNoteBtn = document.getElementById('addNoteBtn');
+
+            let notes = [];
+            let currentNoteId = null;
+
+            function renderNotes() {
+                notesList.innerHTML = '';
+                notes.forEach(note => {
+                    const li = document.createElement('li');
+                    li.className = `note-item cursor-pointer p-2 rounded flex justify-between items-center ${note.id === currentNoteId ? 'selected-note' : ''}`;
+                    li.onclick = () => {
+                        loadNoteContent(note.id);
+                    };
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = note.title;
+                    input.className = 'note-title';
+                    input.readOnly = true;
+
+                    input.onblur = () => {
+                        input.readOnly = true;
+                        saveNoteTitle(note.id, input.value);
+                    };
+
+                    const span = document.createElement('span');
+                    span.className = 'flex-1';
+                    span.appendChild(input);
+
+                    const menuButton = document.createElement('button');
+                    menuButton.className = 'menu-button';
+                    menuButton.innerHTML = '⋮';
+                    menuButton.onclick = (e) => {
+                        e.stopPropagation();
+                        input.readOnly = false;
+                        input.focus();
+                    };
+
+                    li.appendChild(span);
+                    li.appendChild(menuButton);
+                    notesList.appendChild(li);
+                });
+            }
+
+            function loadNoteContent(id) {
+                saveCurrentNoteContent(); // Save current note content before loading a new one
+                currentNoteId = id;
+                const note = notes.find(n => n.id === id);
+                if (note) {
+                    noteContent.value = note.content;
+                }
+                renderNotes(); // Re-render notes to update the selected note
+            }
+
+            function saveCurrentNoteContent() {
+                if (currentNoteId !== null) {
+                    const note = notes.find(n => n.id === currentNoteId);
+                    if (note) {
+                        note.content = noteContent.value;
+                    }
+                }
+            }
+
+            function saveNoteTitle(id, newTitle) {
+                const note = notes.find(n => n.id === id);
+                if (note) {
+                    note.title = newTitle;
+                }
+                renderNotes();
+            }
+
+            addNoteBtn.onclick = () => {
+                const newNote = {
+                    id: Date.now(),
+                    title: `Note ${notes.length + 1}`,
+                    content: ''
+                };
+                notes.push(newNote);
+                renderNotes();
+                loadNoteContent(newNote.id); // Load the new note immediately
+            };
+
+            noteContent.addEventListener('input', () => {
+                saveCurrentNoteContent();
+            });
+
+            // Initialize with an empty note
+            addNoteBtn.click();
+        });
+    </script>
+</body>
+</html>
